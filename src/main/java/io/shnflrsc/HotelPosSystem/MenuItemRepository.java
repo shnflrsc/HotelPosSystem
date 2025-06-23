@@ -1,11 +1,9 @@
 package io.shnflrsc.HotelPosSystem;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class MenuItemRepository {
     private final Connection connection;
@@ -40,5 +38,25 @@ public class MenuItemRepository {
         }
 
         return menuItems;
+    }
+
+    public Optional<MenuItem> getMenuItemById(int queryId) throws SQLException {
+        String sql = "SELECT * FROM menu_items WHERE id = ?";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setInt(1, queryId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            MenuItem menuItem = new MenuItem (rs.getInt("id"), rs.getString("name"), rs.getDouble("price"), rs.getString("category"));
+            return Optional.of(menuItem);
+        }
+        return Optional.empty();
+    }
+
+    public boolean menuItemExists(int id) throws SQLException {
+        String sql = "SELECT 1 FROM menu_items WHERE id = ?";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setInt(1, id);
+        ResultSet rs = ps.executeQuery();
+        return rs.next();
     }
 }
