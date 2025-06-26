@@ -2,10 +2,7 @@ package io.shnflrsc.HotelPosSystem;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 
 public class POSController {
     private final POSView posView;
@@ -24,16 +21,10 @@ public class POSController {
             displayException(e);
         }
     }
-    public void displayMenuItems() {
-        try {
-            posView.displayAllMenuItems(menuItemService.getAllMenuItems());
-        } catch (SQLException e) {
-            displayException(e);
-        }
-    }
     public void displayException(Exception e) {
         posView.displayException(e.getMessage());
     }
+
     public boolean menuItemExists(int id) {
         try {
             return menuItemService.menuItemExists(id);
@@ -42,23 +33,30 @@ public class POSController {
             return false;
         }
     }
-    public boolean isInteger(String input) {
+
+    public void displayMenuItems() {
         try {
-            Integer.parseInt(input);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
+            posView.displayMenuItems(menuItemService.getAllMenuItems());
+        } catch (SQLException e) {
+            displayException(e);
         }
     }
-    public void displayAllOrders() {
+    public void displayOrders() {
         try {
-            posView.displayAllOrders(orderService.getAllOrders());
+            posView.displayOrders(orderService.getAllOrders());
+        } catch (SQLException e) {
+            displayException(e);
+        }
+    }
+    public void displayOrderItems() {
+        try {
+            posView.displayOrderItems(orderService.getAllOrderItems());
         } catch (SQLException e) {
             displayException(e);
         }
     }
 
-    public void addnewOrder() {
+    public void addNewOrder() {
         String roomNumber = "";
         String paymentTypeStr = "";
         PaymentType paymentType = PaymentType.CASH;
@@ -97,7 +95,7 @@ public class POSController {
             displayException(e);
         }
 
-        List<OrderItem> orderItems = new ArrayList<>();
+        Map<Integer, OrderItem> orderItemsByMenuId = new HashMap<>();
         double total = 0.00;
         String menuItemIdInput = "";
 
@@ -110,7 +108,17 @@ public class POSController {
                     Optional<MenuItem> menuItemOptional = menuItemService.getMenuItemById(Integer.parseInt(menuItemIdInput));
 
                     if (menuItemOptional.isPresent()) {
-                        orderItems.add(new OrderItem(0, orderId, menuItemOptional.get().id(), 1));
+
+                        int menuItemId = menuItemOptional.get().id();
+
+                        if (orderItemsByMenuId.containsKey(menuItemId)) {
+                            OrderItem oldOrderItem = orderItemsByMenuId.get(menuItemId);
+                            OrderItem newOrderItem = oldOrderItem.withQuantity(oldOrderItem.quantity() + 1);
+                            orderItemsByMenuId.put(menuItemId, newOrderItem);
+                        } else {
+                            orderItemsByMenuId.put(menuItemId, new OrderItem(0, orderId, menuItemId, 1));
+                        }
+
                         total += menuItemOptional.get().price();
                     } else {
                         System.out.println("Invalid ID");
@@ -121,9 +129,14 @@ public class POSController {
                     break;
                 } else if (menuItemIdInput.equalsIgnoreCase("place order")) {
                     orderService.placeOrder(orderId);
+
+                    List<OrderItem> orderItems = new ArrayList<>(orderItemsByMenuId.values());
                     orderService.addOrderItems(orderItems);
+
                     orderService.editOrderTotal(orderId, total);
                     System.out.println("Order for room number " + roomNumber + " with payment type " + paymentType + " placed");
+
+                    displayReceipt(orderId, orderItems);
                     break;
                 }
 
@@ -134,4 +147,37 @@ public class POSController {
             }
         }
     }
+
+    public boolean isInteger(String input) {
+        try {
+            Integer.parseInt(input);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public void displayReceipt(int orderId, List<OrderItem> orderItems) {
+        try {
+            Map<MenuItem, Integer> MenuItemQuantities = new HashMap<>();
+            double total = 0.00;
+
+            for (OrderItem orderItem : orderItems) {
+                Optional<MenuItem> menuItem = menuItemService.getMenuItemById(orderItem.menuItemId());
+                if (menuItem.isPresent()) {
+                    MenuItem item = menuItem.get();
+                    int currentQty = MenuItemQuantities.getOrDefault(item, 0);
+                    MenuItemQuantities.put(item, currentQty + orderItem.quantity());
+
+                    total += item.price() * orderItem.quantity();
+                }
+            }
+
+            posView.displayReceipt(orderId, MenuItemQuantities, total);
+
+        } catch (SQLException e) {
+            displayException(e);
+        }
+    }
+
 }

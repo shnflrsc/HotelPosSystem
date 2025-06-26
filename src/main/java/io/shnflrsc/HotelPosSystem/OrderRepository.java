@@ -15,34 +15,58 @@ public class OrderRepository {
 
     public List<Order> getAllOrders() throws SQLException, IllegalArgumentException {
         List<Order> orders = new ArrayList<>();
-
         String sql = "SELECT * FROM orders";
+
+        String paymentTypeStr = "";
+        PaymentType paymentType = PaymentType.CASH;
+        String statusStr = "";
+        Status status = Status.DRAFT;
+
         try (
                 Statement statement = connection.createStatement();
                 ResultSet rs = statement.executeQuery(sql)
                 ) {
+
             while (rs.next()) {
 
-                int id = rs.getInt("id");
-                LocalDateTime timestamp = rs.getTimestamp("timestamp").toLocalDateTime();
-                double total = rs.getDouble("total");
-                String paymentTypeStr = rs.getString("payment_type");
-                PaymentType paymentType = PaymentType.valueOf(paymentTypeStr);
-                String roomNumber = rs.getString("room_number");
-                String statusStr = rs.getString("status");
-                Status status = Status.valueOf(statusStr);
+                paymentTypeStr = rs.getString("payment_type");
+                paymentType = PaymentType.valueOf(paymentTypeStr);
+                statusStr = rs.getString("status");
+                status = Status.valueOf(statusStr);
 
                 orders.add(new Order (
-                        id,
-                        timestamp,
-                        total,
+                        rs.getInt("id"),
+                        rs.getTimestamp("timestamp").toLocalDateTime(),
+                        rs.getDouble("total"),
                         paymentType,
-                        roomNumber,
+                        rs.getString("room_number"),
                         status
                 ));
             }
         }
         return orders;
+    }
+
+    public List<OrderItem> getAllOrderItems() throws SQLException {
+        List <OrderItem> orderItems = new ArrayList<>();
+
+        String sql = "SELECT * FROM order_items";
+
+        try (
+                Statement statement = connection.createStatement();
+                ResultSet rs = statement.executeQuery(sql);
+                ) {
+            while (rs.next()) {
+                orderItems.add(new OrderItem (
+                        rs.getInt("id"),
+                        rs.getInt("order_id"),
+                        rs.getInt("menu_item_id"),
+                        rs.getInt("quantity")
+                ));
+            }
+
+            return orderItems;
+        }
     }
 
     public int addDraftOrderAndReturnNewId(Order draftOrder) throws SQLException {
@@ -100,11 +124,39 @@ public class OrderRepository {
         }
     }
 
+    public int addOrderItemAndReturnId(OrderItem orderItem) throws SQLException {
+        String sql = "INSERT INTO order_items (order_id, menu_item_id, quantity) VALUES (?, ?, ?)";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setInt(1, orderItem.orderId());
+        ps.setInt(2, orderItem.menuItemId());
+        ps.setInt(3, orderItem.quantity());
+        ps.executeUpdate();
+
+        ResultSet keys = ps.getGeneratedKeys();
+        if (keys.next()) {
+            return keys.getInt(1);
+        } else {
+            throw new SQLException("Failed to retrieve generated order ID.");
+        }
+    }
+
     public void editOrderTotal(int orderId, double newTotal) throws SQLException {
         String sql = "UPDATE orders SET total = ? WHERE id = ?";
         PreparedStatement ps = connection.prepareStatement(sql);
         ps.setDouble(1, newTotal);
         ps.setInt(2, orderId);
         ps.executeUpdate();
+    }
+
+    public boolean orderItemExistsByMenuItemId(int menuItemId) throws SQLException {
+        String sql = "SELECT * FROM order_items WHERE id = ?";
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setInt(1, menuItemId);
+        ResultSet rs = ps.executeQuery();
+        return rs.next();
+    }
+
+    public void orderItemQuantityIncrement() {
+
     }
 }

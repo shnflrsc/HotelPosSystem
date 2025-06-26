@@ -14,6 +14,10 @@ public class OrderService {
         return orderRepository.getAllOrders();
     }
 
+    public List<OrderItem> getAllOrderItems() throws SQLException {
+        return orderRepository.getAllOrderItems();
+    }
+
     public int addDraftOrderAndReturnNewId(Order draftOrder) throws SQLException {
         return orderRepository.addDraftOrderAndReturnNewId(draftOrder);
     }
@@ -30,7 +34,15 @@ public class OrderService {
         orderRepository.addOrderItems(orderItems);
     }
 
+    public int addOrderItemAndReturnId(OrderItem orderItem) throws SQLException {
+        return orderRepository.addOrderItemAndReturnId(orderItem);
+    }
+
     public void editOrderTotal(int orderId, double newTotal) throws SQLException {
         orderRepository.editOrderTotal(orderId, newTotal);
+    }
+
+    public boolean orderItemExistsByMenuItemId(int menuItemId) throws SQLException {
+        return orderRepository.orderItemExistsByMenuItemId(menuItemId);
     }
 }

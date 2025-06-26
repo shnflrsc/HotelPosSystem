@@ -1,6 +1,7 @@
 package io.shnflrsc.HotelPosSystem;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -9,14 +10,19 @@ public class POSView {
         System.err.println(errorMessage);
     }
 
-    public void displayAllMenuItems(List<MenuItem> menuItems) {
+    public void displayMenuItems(List<MenuItem> menuItems) {
         for (MenuItem menuItem : menuItems) {
             System.out.println(menuItem.id() + " " + menuItem.name() + " ₱" + menuItem.price() + " " + menuItem.category());
         }
     }
-    public void displayAllOrders(List<Order> orders) {
+    public void displayOrders(List<Order> orders) {
         for (Order order : orders) {
             System.out.println(order.id() + " ₱" + order.total() + " " + order.roomNumber() + " " + order.paymentType() + " " + order.status());
+        }
+    }
+    public void displayOrderItems(List<OrderItem> orderItems) {
+        for (OrderItem orderItem : orderItems) {
+            System.out.println(orderItem.id() + " " + orderItem.orderId() + " " + orderItem.menuItemId() + " " + orderItem.quantity());
         }
     }
     public String roomNumberInput() throws NoSuchElementException {
@@ -35,4 +41,18 @@ public class POSView {
         System.out.print("[cancel] [place order] [IDs of products you want to order]: ");
         return scanner.nextLine();
     }
+
+    public void displayReceipt(int orderId, Map<MenuItem, Integer> MenuItemQuantities, double total) {
+        System.out.println("Receipt for Order #" + orderId);
+        System.out.println();
+
+        MenuItemQuantities.forEach((menuItem, quantity) -> {
+            double lineTotal = menuItem.price() * quantity;
+            System.out.printf("%-20s ₱%.2f x %d = ₱%.2f%n", menuItem.name(), menuItem.price(), quantity, lineTotal);
+        });
+
+        System.out.println();
+        System.out.printf("Total: ₱%.2f%n", total);
+    }
+
 }
