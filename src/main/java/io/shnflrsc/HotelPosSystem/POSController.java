@@ -136,6 +136,8 @@ public class POSController {
                     orderService.editOrderTotal(orderId, total);
                     System.out.println("Order for room number " + roomNumber + " with payment type " + paymentType + " placed");
 
+                    orderService.logOrder(orderId, LocalDateTime.now(), total);
+
                     displayReceipt(orderId, orderItems);
                     break;
                 }
@@ -179,5 +181,4 @@ public class POSController {
             displayException(e);
         }
     }
-
 }

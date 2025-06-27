@@ -4,6 +4,7 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.List;
 
 public class OrderRepository {
@@ -156,7 +157,16 @@ public class OrderRepository {
         return rs.next();
     }
 
-    public void orderItemQuantityIncrement() {
+    public void logOrder(int orderId, LocalDateTime timestamp, double total) throws SQLException {
+        String sql = "INSERT INTO logs (order_id, timestamp, total) VALUES (?, ?, ?)";
+        PreparedStatement ps = connection.prepareStatement(sql);
 
+        ps.setInt(1, orderId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedTimestamp = LocalDateTime.now().format(formatter);
+        ps.setString(2, formattedTimestamp);
+        ps.setDouble(3, total);
+
+        ps.executeUpdate();
     }
 }

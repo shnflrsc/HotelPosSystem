@@ -1,6 +1,7 @@
 package io.shnflrsc.HotelPosSystem;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class OrderService {
@@ -44,5 +45,9 @@ public class OrderService {
 
     public boolean orderItemExistsByMenuItemId(int menuItemId) throws SQLException {
         return orderRepository.orderItemExistsByMenuItemId(menuItemId);
+    }
+
+    public void logOrder(int orderId, LocalDateTime timestamp, double total) throws SQLException {
+        orderRepository.logOrder(orderId, timestamp, total);
     }
 }
